@@ -1,0 +1,9 @@
+#!/bin/bash
+
+while IFS="," read -p id name age
+do
+    echo "ID is : $id "
+    echo "Name is : $name "
+    echo "Age is : $age "
+
+done < csv_file.csv
