@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function installation_package() {
+function installing_package() {
     local packageName=${1}
     if ! apt-get install ${packageName} -y
     then 
@@ -36,8 +36,8 @@ then
      exit 1 
 fi
 
-installation_package maven
-installation_package tomcat9
+installing_package maven
+installing_package tomcat9
 maventarget test
 maventarget package
 

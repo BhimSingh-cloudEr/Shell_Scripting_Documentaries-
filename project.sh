@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function installation_package() {
+function installing_package() {
     local packageName=${1}
     apt-get install ${packageName} -y
     if [[ $? != 0 ]]
@@ -30,8 +30,8 @@ then
      echo "Update command doesn't run successfully, please try again !"
 fi
 
-installation_package maven
-installation_package tomcat9
+installing_package maven
+installing_package tomcat9
 maventarget test
 maventarget package
 
