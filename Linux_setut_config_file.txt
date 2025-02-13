@@ -1,0 +1,116 @@
+Configure linux ip address, hostname,dns,gateway,install security updates,set timezone,set date and time,install WordPress, MariaDB. Automation script to do all these things in a single script in windows machine.
+
+To automate the configuration of a Linux machine with settings such as IP address, hostname, DNS, gateway, timezone, date and time, and to install WordPress and MariaDB, you can create a shell script. Note that this script assumes you have access to the Linux machine via SSH from a Windows environment.
+
+Prerequisites:
+SSH access to your Linux machine.
+Ensure that any required packages (like sshpass for password-based SSH access) are installed on your Windows machine.
+PowerShell Script to Execute the Shell Script
+You can use PowerShell to execute a shell script on your Linux machine. Here’s how you can set this up:
+
+Step 1: Create the Shell Script
+Create a file named setup_script.sh and include the following:
+
+bash
+
+Copy
+#!/bin/bash
+
+# Variables - customize these as needed
+IP_ADDRESS="192.168.1.100"
+NETMASK="255.255.255.0"
+GATEWAY="192.168.1.1"
+HOSTNAME="yourhostname"
+DNS_SERVER="8.8.8.8"
+TIMEZONE="America/New_York"
+DB_ROOT_PASS="your_db_root_password"
+DB_NAME="wordpress_db"
+DB_USER="wordpress_user"
+DB_PASS="your_wp_db_password"
+
+# Set hostname
+echo $HOSTNAME > /etc/hostname
+hostnamectl set-hostname $HOSTNAME
+
+# Configure network interface
+cat <<EOF > /etc/netplan/01-netcfg.yaml
+network:
+    version: 2
+    renderer: networkd
+    ethernets:
+        eth0:
+            dhcp4: no
+            addresses:
+              - $IP_ADDRESS/$NETMASK
+            gateway4: $GATEWAY
+            nameservers:
+                addresses: [$DNS_SERVER]
+EOF
+
+# Apply network configuration
+netplan apply
+
+# Update the system and install necessary packages
+apt update && apt upgrade -y
+apt install -y apache2 mariadb-server php php-mysql libapache2-mod-php
+
+# Secure MariaDB Installation
+mysql_secure_installation <<EOF
+
+y
+$DB_ROOT_PASS
+$DB_ROOT_PASS
+y
+y
+y
+y
+EOF
+
+# Create a database and user for WordPress
+mysql -u root -p$DB_ROOT_PASS -e "CREATE DATABASE $DB_NAME;"
+mysql -u root -p$DB_ROOT_PASS -e "CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';"
+mysql -u root -p$DB_ROOT_PASS -e "GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';"
+mysql -u root -p$DB_ROOT_PASS -e "FLUSH PRIVILEGES;"
+
+# Install WordPress
+wget -c http://wordpress.org/latest.tar.gz
+tar -xzvf latest.tar.gz
+cp -r wordpress/* /var/www/html/
+chown -R www-data:www-data /var/www/html/
+chmod -R 755 /var/www/html/
+
+# Set timezone
+timedatectl set-timezone $TIMEZONE
+
+# Set date and time (optional if syncing with NTP)
+timedatectl set-ntp true
+
+# Cleanup
+rm -rf latest.tar.gz wordpress
+
+echo "Setup completed!"
+Step 2: Create a PowerShell Script to Execute the Shell Script
+Create a PowerShell script named run_setup.ps1:
+
+powershell
+
+Copy
+# Variables
+$LinuxIP = "192.168.1.100"
+$SSHUser = "your_ssh_username"
+
+# Path to the shell script on your Windows machine
+$ShellScriptPath = "C:\path\to\setup_script.sh"
+
+# Use plink to execute the shell script on the Linux machine
+& "C:\path\to\plink.exe" -ssh -pw your_password $SSHUser@$LinuxIP "bash -s" < $ShellScriptPath
+How to Run the Scripts
+Save setup_script.sh on your Windows machine and ensure it has execution permissions.
+You may need to install PuTTY which includes plink.exe for SSH command execution.
+Save run_setup.ps1 in the same or different directory.
+Run the PowerShell script from a PowerShell terminal.
+Notes:
+Replace all placeholder values in the scripts with your actual configurations.
+Ensure your Linux machine is reachable over the network.
+Adjust the firewall settings as necessary to allow SSH connections.
+Test the scripts carefully, especially the database connfigurations.
